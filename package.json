@@ -9,6 +9,7 @@
     "dev": "modern dev",
     "build": "modern build",
     "build:watch": "modern build -w",
+    "test": "vitest",
     "reset": "rimraf ./**/node_modules",
     "lint": "modern lint",
     "change": "modern change",
@@ -21,25 +22,31 @@
     "upgrade": "modern upgrade"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,mjs,cjs}": [
-      "node --max_old_space_size=8192 ./node_modules/eslint/bin/eslint.js --fix --color --cache --quiet"
+    "*.{js,ts,jsx,tsx}": [
+      "biome check"
     ]
   },
-  "eslintIgnore": [
-    "node_modules/",
-    "dist/"
-  ],
-  "dependencies": {},
-  "peerDependencies": {},
+  "dependencies": {
+    "@vercel/nft": "^0.27.3",
+    "fs-extra": "^11.2.0",
+    "mlly": "1.6.1",
+    "pkg-types": "^1.1.3",
+    "pkg-up": "^3.0.0",
+    "semver": "^7.6.3"
+  },
   "devDependencies": {
+    "@biomejs/biome": "1.8.3",
     "@modern-js/module-tools": "2.58.0",
-    "@modern-js/eslint-config": "2.58.0",
-    "typescript": "~5.0.4",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "~16.11.7",
-    "rimraf": "~3.0.2",
+    "@types/pkg-up": "^3.1.0",
+    "@types/semver": "^7.5.8",
+    "husky": "~8.0.1",
     "lint-staged": "~13.1.0",
     "prettier": "~2.8.1",
-    "husky": "~8.0.1"
+    "rimraf": "~3.0.2",
+    "typescript": "~5.0.4",
+    "vitest": "^2.0.5"
   },
   "sideEffects": [],
   "publishConfig": {

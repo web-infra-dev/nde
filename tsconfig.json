@@ -8,11 +8,8 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "lib": ["DOM", "ESNext"],
     "moduleResolution": "node",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
+    "target": "ESNext",
     "resolveJsonModule": true,
     "rootDir": "src",
     "skipLibCheck": true,
