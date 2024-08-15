@@ -1,0 +1,10 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`handle dependencies > basic usage 1`] = `
+{
+  "dependencies": {},
+  "name": "project1-prod-prod-prod",
+  "private": true,
+  "version": "1.0.0",
+}
+`;

@@ -2,7 +2,7 @@
 import { expect, describe, it, afterEach } from 'vitest'
 import path from 'node:path'
 import fse from 'fs-extra'
-import { handleDependencies } from '../src';
+import { nodeDepEmit } from '../src';
 
 describe('handle dependencies', () => {
   const project1Dir = path.join(__dirname, 'fixtures/project1');
@@ -15,7 +15,7 @@ describe('handle dependencies', () => {
     await fse.remove(outputPkgPath);
   })
   it('basic usage', async() => {
-    await handleDependencies({
+    await nodeDepEmit({
       appDir: project1Dir,
       sourceDir: srcDir,
     })

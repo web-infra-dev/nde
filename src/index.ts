@@ -27,7 +27,7 @@ export type { NodeFileTraceOptions } from '@vercel/nft';
 export { nodeFileTrace } from '@vercel/nft';
 
 
-export const handleDependencies = async ({
+export const nodeDepEmit = async ({
   appDir,
   sourceDir,
   includeEntries,
@@ -43,8 +43,17 @@ export const handleDependencies = async ({
   },
   traceOptions,
 }: {
+  /**
+   * Directory of the project
+   */
   appDir: string;
+  /**
+   * The directory where the code will be analyzed, all js files in that directory will be used as entries, and the node_modules directory will be generated in that directory
+   */
   sourceDir: string;
+  /**
+   * Some files to include, generally some files not analyzed by the code
+   */
   includeEntries?: string[];
   traceFiles?: typeof defaultTraceFiles;
   entryFilter?: (filePath: string) => boolean;
