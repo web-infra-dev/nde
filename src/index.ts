@@ -21,12 +21,15 @@ import {
   resolveTracedPath,
   writePackage,
 } from './utils';
+import { debug } from './utils';
 
 export type { NodeFileTraceOptions } from '@vercel/nft';
 export { nodeFileTrace } from '@vercel/nft';
+
+
 export const handleDependencies = async ({
   appDir,
-  serverRootDir,
+  sourceDir,
   includeEntries,
   traceFiles = defaultTraceFiles,
   entryFilter,
@@ -34,15 +37,15 @@ export const handleDependencies = async ({
   copyWholePackage,
   cacheOptions = {
     cacheDir: '.modern-js/deploy',
-    analysisCache: true,
+    analysisCache: false,
     fileCache: false,
     symlinkCache: false,
   },
   traceOptions,
 }: {
   appDir: string;
-  serverRootDir: string;
-  includeEntries: string[];
+  sourceDir: string;
+  includeEntries?: string[];
   traceFiles?: typeof defaultTraceFiles;
   entryFilter?: (filePath: string) => boolean;
   modifyPackageJson?: (pkgJson: PackageJson) => PackageJson;
@@ -51,13 +54,12 @@ export const handleDependencies = async ({
   traceOptions?: NodeFileTraceOptions;
 }) => {
   const base = '/';
-  const startTime = Date.now();
-  const entryFiles = await findEntryFiles(serverRootDir, entryFilter);
+  const entryFiles = await findEntryFiles(sourceDir, entryFilter);
 
-  console.time('traceFiles');
+  debug('trace files start');
   const fileTrace = await traceFiles({
-    entryFiles: entryFiles.concat(includeEntries),
-    serverRootDir,
+    entryFiles: entryFiles.concat(includeEntries || []),
+    sourceDir,
     cacheOptions: {
       ...cacheOptions,
       cacheDir: path.resolve(appDir, cacheOptions.cacheDir),
@@ -65,7 +67,7 @@ export const handleDependencies = async ({
     base,
     traceOptions,
   });
-  console.timeEnd('traceFiles');
+  debug('trace files end');
   const currentProjectModules = path.join(appDir, 'node_modules');
   // Because vercel/nft may find inaccurately, we limit the range of query of dependencies
   const dependencySearchRoot = path.resolve(appDir, '../../../../../../');
@@ -79,7 +81,7 @@ export const handleDependencies = async ({
         const filePath = await resolveTracedPath(base, _path);
 
         if (
-          isSubPath(serverRootDir, filePath) ||
+          isSubPath(sourceDir, filePath) ||
           (isSubPath(appDir, filePath) &&
             !isSubPath(currentProjectModules, filePath))
         ) {
@@ -235,12 +237,12 @@ export const handleDependencies = async ({
       return writePackage({
         pkg,
         version,
-        projectDir: serverRootDir,
+        projectDir: sourceDir,
       });
     }),
   );
 
-  const projectPkgJson = await readPackageJSON(serverRootDir).catch(
+  const projectPkgJson = await readPackageJSON(sourceDir).catch(
     () => ({} as PackageJson),
   );
 
@@ -272,33 +274,33 @@ export const handleDependencies = async ({
     for (const [version, parentPkgs] of versionEntires) {
       const pkg = tracedPackages[pkgName];
 
-      const pkgDestPath = `.modernjs/${pkgName}@${version}/node_modules/${pkgName}`;
+      const pkgDestPath = `.nde/${pkgName}@${version}/node_modules/${pkgName}`;
       await writePackage({
         pkg,
         version,
-        projectDir: serverRootDir,
+        projectDir: sourceDir,
         _pkgPath: pkgDestPath,
       });
-      await linkPackage(pkgDestPath, `${pkgName}`, serverRootDir);
+      await linkPackage(pkgDestPath, `${pkgName}`, sourceDir);
 
       for (const parentPkg of parentPkgs) {
         const parentPkgName = parentPkg.replace(/@[^@]+$/, '');
         await (multiVersionPkgs[parentPkgName]
           ? linkPackage(
               pkgDestPath,
-              `.modernjs/${parentPkg}/node_modules/${pkgName}`,
-              serverRootDir,
+              `.nde/${parentPkg}/node_modules/${pkgName}`,
+              sourceDir,
             )
           : linkPackage(
               pkgDestPath,
               `${parentPkgName}/node_modules/${pkgName}`,
-              serverRootDir,
+              sourceDir,
             ));
       }
     }
   }
 
-  const outputPkgPath = path.join(serverRootDir, 'package.json');
+  const outputPkgPath = path.join(sourceDir, 'package.json');
 
   const newPkgJson = {
     name: `${projectPkgJson.name || 'modernjs-project'}-prod`,
@@ -317,6 +319,5 @@ export const handleDependencies = async ({
   const finalPkgJson = modifyPackageJson?.(newPkgJson) || newPkgJson;
 
   await fse.writeJSON(outputPkgPath, finalPkgJson);
-  const endTime = Date.now();
-  console.log('handleDependencies cost:', `${endTime - startTime}ms`);
+  debug('nde finish');
 };

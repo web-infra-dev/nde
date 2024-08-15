@@ -1,9 +1,12 @@
 import os from 'node:os';
 import path from 'node:path';
 import { type NodeFileTraceOptions, nodeFileTrace } from '@vercel/nft';
+import createDebug from 'debug';
 import fse from 'fs-extra';
 import { parseNodeModulePath } from 'mlly';
 import type { PackageJson } from 'pkg-types';
+
+export const debug = createDebug('nde');
 
 export type TracedPackage = {
   name: string;
@@ -233,7 +236,7 @@ export interface CacheOptions {
 
 const loadCache = async (filePath: string, enabled: boolean) => {
   if (enabled && (await fse.pathExists(filePath))) {
-    console.log('load cache:', filePath);
+    debug('load cache:', filePath);
     const data = (await fse.readFile(filePath)).toString();
     return deserializeMap(data);
   }
@@ -253,13 +256,13 @@ const writeCache = async (filePath: string, cacheMap: Map<string, unknown>) => {
 
 export const traceFiles = async ({
   entryFiles,
-  serverRootDir,
+  sourceDir,
   base = '/',
   cacheOptions,
   traceOptions,
 }: {
   entryFiles: string[];
-  serverRootDir: string;
+  sourceDir: string;
   base?: string;
   cacheOptions: CacheOptions;
   traceOptions?: NodeFileTraceOptions;
@@ -277,7 +280,7 @@ export const traceFiles = async ({
 
   const res = await nodeFileTrace(entryFiles, {
     base,
-    processCwd: serverRootDir,
+    processCwd: sourceDir,
     cache,
     ...traceOptions,
   });
