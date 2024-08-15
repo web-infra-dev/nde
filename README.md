@@ -1,6 +1,6 @@
-# Nde (Node.js Dependencies Emitter)
+# Ndepe (Node.js Dependencies Emitter)
 
-`nde` is a utility that analyzes your Node.js project's source code to extract the necessary dependencies and files required for deployment and emits these files to a designed node_modules directory that can be used for the deployment. `nde` can simplify the deployment flow and greatly reduce the size of the deployment package.
+`Ndepe` is a utility that analyzes your Node.js project's source code to extract the necessary dependencies and files required for deployment and emits these files to a designed node_modules directory that can be used for the deployment. `Ndepe` can simplify the deployment flow and greatly reduce the size of the deployment package.
 
 
 ## Features
@@ -12,7 +12,7 @@
 ## Usage
 
 ```
-import { nodeDepEmit } from 'nde'
+import { nodeDepEmit } from 'ndepe'
 
 nodeDepEmit({
   appDir: appDirectory,

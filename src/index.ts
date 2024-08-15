@@ -283,7 +283,7 @@ export const nodeDepEmit = async ({
     for (const [version, parentPkgs] of versionEntires) {
       const pkg = tracedPackages[pkgName];
 
-      const pkgDestPath = `.nde/${pkgName}@${version}/node_modules/${pkgName}`;
+      const pkgDestPath = `.ndepe/${pkgName}@${version}/node_modules/${pkgName}`;
       await writePackage({
         pkg,
         version,
@@ -297,7 +297,7 @@ export const nodeDepEmit = async ({
         await (multiVersionPkgs[parentPkgName]
           ? linkPackage(
               pkgDestPath,
-              `.nde/${parentPkg}/node_modules/${pkgName}`,
+              `.ndepe/${parentPkg}/node_modules/${pkgName}`,
               sourceDir,
             )
           : linkPackage(
@@ -328,5 +328,5 @@ export const nodeDepEmit = async ({
   const finalPkgJson = modifyPackageJson?.(newPkgJson) || newPkgJson;
 
   await fse.writeJSON(outputPkgPath, finalPkgJson);
-  debug('nde finish');
+  debug('nodeDepEmit finish');
 };
