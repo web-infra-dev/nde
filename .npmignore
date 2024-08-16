@@ -19,8 +19,6 @@ output_resource/
 tests/
 
 .vscode/**/*
-!.vscode/settings.json
-!.vscode/extensions.json
 .idea/
 
 src/
@@ -32,4 +30,7 @@ jest.config.js
 tsconfig.json
 CHANGELOG.md
 
-**/*/api/typings/auto-generated
+.husky/
+
+.changeset
+
