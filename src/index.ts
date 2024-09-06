@@ -57,7 +57,7 @@ export const nodeDepEmit = async ({
 	traceFiles?: typeof defaultTraceFiles;
 	entryFilter?: (filePath: string) => boolean;
 	modifyPackageJson?: (pkgJson: PackageJson) => PackageJson;
-	copyWholePackage?: (pkgName: string) => boolean;
+	copyWholePackage?: (pkgName: string, pkgJSON: PackageJson) => boolean;
 	cacheOptions?: CacheOptions;
 	traceOptions?: NodeFileTraceOptions;
 }) => {
@@ -203,7 +203,7 @@ export const nodeDepEmit = async ({
 		tracedFile.pkgName = pkgName;
 		tracedFile.pkgVersion = pkgJSON.version;
 
-		const shouldCopyWholePackage = copyWholePackage?.(pkgName);
+		const shouldCopyWholePackage = copyWholePackage?.(pkgName, pkgJSON);
 		if (
 			tracedFile.path.startsWith(tracedFile.pkgPath) &&
 			// Merged package files are based on the version, not on paths, to handle some boundary cases
