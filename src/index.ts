@@ -166,6 +166,7 @@ export const nodeDepEmit = async ({
 	);
 
 	const tracedPackages: Record<string, TracedPackage> = {};
+	const copyedWholePackage: Record<string, boolean> = {};
 	for (const tracedFile of Object.values(tracedFiles)) {
 		const { pkgName } = tracedFile;
 		let tracedPackage = tracedPackages[pkgName];
@@ -210,15 +211,22 @@ export const nodeDepEmit = async ({
 			tracedPackageVersion.pkgJSON.version === tracedFile.pkgVersion
 		) {
 			if (shouldCopyWholePackage) {
-				const allFiles = await readDirRecursive(tracedFile.pkgPath, {
-					filter(filename) {
-						const normalizedPath = filename.split(path.sep).join("/");
-						return !normalizedPath.includes(
-							`/${tracedFile.pkgName}/node_modules/`,
-						);
-					},
-				});
-				tracedPackageVersion.files.push(...allFiles);
+				const cacheKey = `${tracedFile.pkgName}@${tracedFile.pkgVersion}`;
+				if (!copyedWholePackage[cacheKey]) {
+					const allFiles = await readDirRecursive(tracedFile.pkgPath, {
+						filter(filename) {
+							return (
+								filename.indexOf(
+									`${path.sep}${tracedFile.pkgName}${path.sep}node_modules${path.sep}`,
+								) === -1
+							);
+						},
+					});
+					tracedPackageVersion.files.push(...allFiles);
+					copyedWholePackage[cacheKey] = true;
+				} else {
+					tracedPackageVersion.files.push(tracedFile.path);
+				}
 			} else {
 				tracedPackageVersion.files.push(tracedFile.path);
 			}
@@ -256,9 +264,9 @@ export const nodeDepEmit = async ({
 		}),
 	);
 
-	const projectPkgJson = await readPackageJSON(sourceDir).catch(
-		() => ({}) as PackageJson,
-	);
+	const projectPkgJson = await readPackageJSON(sourceDir, {
+		cache: true,
+	}).catch(() => ({}) as PackageJson);
 
 	for (const [pkgName, pkgVersions] of Object.entries(multiVersionPkgs)) {
 		const versionEntires = Object.entries(pkgVersions).sort(

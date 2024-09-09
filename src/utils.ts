@@ -79,7 +79,7 @@ export const writePackage = async (options: WritePackageOptions) => {
 	await fse.writeFile(packageJsonPath, JSON.stringify(pkgJSON, null, 2));
 };
 
-const isWindows = os.platform() === "win32";
+export const isWindows = os.platform() === "win32";
 export const linkPackage = async (
 	from: string,
 	to: string,
