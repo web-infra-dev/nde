@@ -210,7 +210,14 @@ export const nodeDepEmit = async ({
 			tracedPackageVersion.pkgJSON.version === tracedFile.pkgVersion
 		) {
 			if (shouldCopyWholePackage) {
-				const allFiles = await readDirRecursive(tracedFile.pkgPath);
+				const allFiles = await readDirRecursive(tracedFile.pkgPath, {
+					filter(filename) {
+						const normalizedPath = filename.split(path.sep).join("/");
+						return !normalizedPath.includes(
+							`/${tracedFile.pkgName}/node_modules/`,
+						);
+					},
+				});
 				tracedPackageVersion.files.push(...allFiles);
 			} else {
 				tracedPackageVersion.files.push(tracedFile.path);
