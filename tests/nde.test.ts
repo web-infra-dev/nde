@@ -8,7 +8,7 @@ describe('handle dependencies', () => {
   const project1Dir = path.join(__dirname, 'fixtures/project1');
   const srcDir = path.join(project1Dir, 'src');
   const outputNodeModulesDir = path.join(srcDir, 'node_modules');
-  const ndeDir = path.join(outputNodeModulesDir, '.nde');
+  const ndeDir = path.join(outputNodeModulesDir, '.ndepe');
   const outputPkgPath = path.join(srcDir, 'package.json');
   afterEach(async () => {
     await fse.remove(outputNodeModulesDir);

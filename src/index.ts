@@ -164,6 +164,7 @@ export const nodeDepEmit = async ({
 			}),
 		).then((r) => r.filter(Boolean))) as [string, TracedFile][],
 	);
+	debug("get traced files");
 
 	const tracedPackages: Record<string, TracedPackage> = {};
 	const copyedWholePackage: Record<string, boolean> = {};
@@ -232,6 +233,7 @@ export const nodeDepEmit = async ({
 			}
 		}
 	}
+	debug("get traced packages");
 
 	const multiVersionPkgs: Record<string, { [version: string]: string[] }> = {};
 	const singleVersionPackages: string[] = [];
@@ -263,6 +265,8 @@ export const nodeDepEmit = async ({
 			});
 		}),
 	);
+
+	debug("process single version packages");
 
 	const projectPkgJson = await readPackageJSON(sourceDir, {
 		cache: true,
@@ -305,24 +309,30 @@ export const nodeDepEmit = async ({
 			});
 			await linkPackage(pkgDestPath, `${pkgName}`, sourceDir);
 
-			for (const parentPkg of parentPkgs) {
-				const parentPkgName = parentPkg.replace(/@[^@]+$/, "");
-				await (multiVersionPkgs[parentPkgName]
-					? linkPackage(
+			await Promise.all(
+				parentPkgs.map(async (parentPkg) => {
+					const parentPkgName = parentPkg.replace(/@[^@]+$/, "");
+					if (multiVersionPkgs[parentPkgName]) {
+						await linkPackage(
 							pkgDestPath,
 							`.ndepe/${parentPkg}/node_modules/${pkgName}`,
 							sourceDir,
-						)
-					: linkPackage(
+						);
+					} else {
+						await linkPackage(
 							pkgDestPath,
 							`${parentPkgName}/node_modules/${pkgName}`,
 							sourceDir,
-						));
-			}
+						);
+					}
+				}),
+			);
 		}
 	}
 
 	const outputPkgPath = path.join(sourceDir, "package.json");
+
+	debug("process multi version packages");
 
 	const newPkgJson = {
 		name: `${projectPkgJson.name || "modernjs-project"}-prod`,
