@@ -164,8 +164,10 @@ export const nodeDepEmit = async ({
 			}),
 		).then((r) => r.filter(Boolean))) as [string, TracedFile][],
 	);
+	debug("get traced files");
 
 	const tracedPackages: Record<string, TracedPackage> = {};
+	const copyedWholePackage: Record<string, boolean> = {};
 	for (const tracedFile of Object.values(tracedFiles)) {
 		const { pkgName } = tracedFile;
 		let tracedPackage = tracedPackages[pkgName];
@@ -210,13 +212,28 @@ export const nodeDepEmit = async ({
 			tracedPackageVersion.pkgJSON.version === tracedFile.pkgVersion
 		) {
 			if (shouldCopyWholePackage) {
-				const allFiles = await readDirRecursive(tracedFile.pkgPath);
-				tracedPackageVersion.files.push(...allFiles);
+				const cacheKey = `${tracedFile.pkgName}@${tracedFile.pkgVersion}`;
+				if (!copyedWholePackage[cacheKey]) {
+					const allFiles = await readDirRecursive(tracedFile.pkgPath, {
+						filter(filename) {
+							return (
+								filename.indexOf(
+									`${path.sep}${tracedFile.pkgName}${path.sep}node_modules${path.sep}`,
+								) === -1
+							);
+						},
+					});
+					tracedPackageVersion.files.push(...allFiles);
+					copyedWholePackage[cacheKey] = true;
+				} else {
+					tracedPackageVersion.files.push(tracedFile.path);
+				}
 			} else {
 				tracedPackageVersion.files.push(tracedFile.path);
 			}
 		}
 	}
+	debug("get traced packages");
 
 	const multiVersionPkgs: Record<string, { [version: string]: string[] }> = {};
 	const singleVersionPackages: string[] = [];
@@ -249,9 +266,11 @@ export const nodeDepEmit = async ({
 		}),
 	);
 
-	const projectPkgJson = await readPackageJSON(sourceDir).catch(
-		() => ({}) as PackageJson,
-	);
+	debug("process single version packages");
+
+	const projectPkgJson = await readPackageJSON(sourceDir, {
+		cache: true,
+	}).catch(() => ({}) as PackageJson);
 
 	for (const [pkgName, pkgVersions] of Object.entries(multiVersionPkgs)) {
 		const versionEntires = Object.entries(pkgVersions).sort(
@@ -290,24 +309,30 @@ export const nodeDepEmit = async ({
 			});
 			await linkPackage(pkgDestPath, `${pkgName}`, sourceDir);
 
-			for (const parentPkg of parentPkgs) {
-				const parentPkgName = parentPkg.replace(/@[^@]+$/, "");
-				await (multiVersionPkgs[parentPkgName]
-					? linkPackage(
+			await Promise.all(
+				parentPkgs.map(async (parentPkg) => {
+					const parentPkgName = parentPkg.replace(/@[^@]+$/, "");
+					if (multiVersionPkgs[parentPkgName]) {
+						await linkPackage(
 							pkgDestPath,
 							`.ndepe/${parentPkg}/node_modules/${pkgName}`,
 							sourceDir,
-						)
-					: linkPackage(
+						);
+					} else {
+						await linkPackage(
 							pkgDestPath,
 							`${parentPkgName}/node_modules/${pkgName}`,
 							sourceDir,
-						));
-			}
+						);
+					}
+				}),
+			);
 		}
 	}
 
 	const outputPkgPath = path.join(sourceDir, "package.json");
+
+	debug("process multi version packages");
 
 	const newPkgJson = {
 		name: `${projectPkgJson.name || "modernjs-project"}-prod`,
