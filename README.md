@@ -15,8 +15,8 @@
 import { nodeDepEmit } from 'ndepe'
 
 nodeDepEmit({
-  appDir: appDirectory,
-  serverRootDir: outputDirectory,
+  appDir: appDirectory, // the directory of the project root
+  sourceDir: sourceDirectory,  // the directory of the entry files, usually the product outputs (e.g. compiled js)
 })
 
 ```
