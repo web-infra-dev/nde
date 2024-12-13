@@ -218,7 +218,7 @@ export const nodeDepEmit = async ({
 						filter(filename) {
 							return (
 								filename.indexOf(
-									`${path.sep}${tracedFile.pkgName}${path.sep}node_modules${path.sep}`,
+									`${tracedFile.pkgPath}${path.sep}node_modules${path.sep}`,
 								) === -1
 							);
 						},
