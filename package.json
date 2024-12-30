@@ -28,7 +28,7 @@
     ]
   },
   "dependencies": {
-    "@vercel/nft": "^0.27.3",
+    "@vercel/nft": "0.27.3",
     "debug": "^4.3.6",
     "fs-extra": "^11.2.0",
     "mlly": "1.6.1",

@@ -6,7 +6,7 @@ settings:
 
 dependencies:
   '@vercel/nft':
-    specifier: ^0.27.3
+    specifier: 0.27.3
     version: 0.27.3
   debug:
     specifier: ^4.3.6
