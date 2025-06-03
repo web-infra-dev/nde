@@ -17,19 +17,9 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
     exit 1
 fi
 
-# Check if working directory is clean
-if [ -n "$(git status --porcelain)" ]; then
-    echo -e "${RED}❌ Error: Working directory is not clean. Please commit or stash your changes.${NC}"
-    exit 1
-fi
-
 # Pull latest changes
 echo -e "${YELLOW}📥 Pulling latest changes...${NC}"
 git pull origin main
-
-# Install dependencies
-echo -e "${YELLOW}📦 Installing dependencies...${NC}"
-pnpm install
 
 # Run tests
 echo -e "${YELLOW}🧪 Running tests...${NC}"
@@ -45,9 +35,6 @@ if [ ! "$(ls -A .changeset/*.md 2>/dev/null)" ]; then
     exit 1
 fi
 
-# Show changeset status
-echo -e "${YELLOW}📋 Changeset status:${NC}"
-pnpm change-status
 
 # Confirm release
 echo -e "${YELLOW}❓ Do you want to proceed with the release? (y/N)${NC}"

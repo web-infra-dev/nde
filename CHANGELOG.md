@@ -1,5 +1,11 @@
 # ndepe
 
+## 0.1.11
+
+### Patch Changes
+
+- ba68af9: feat: support transformPackageJson hook
+
 ## 0.1.8
 
 ### Patch Changes
