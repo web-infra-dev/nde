@@ -62,9 +62,8 @@ export const nodeDepEmit = async ({
 	modifyPackageJson?: (pkgJson: PackageJson) => PackageJson;
 	/**
 	 * Hook to transform each package's package.json before writing it
-	 * @param pkgName - Package name
-	 * @param version - Package version
-	 * @param pkgJSON - Original package.json content
+	 * @param options - Options object containing pkgJSON
+	 * @param options.pkgJSON - Original package.json content
 	 * @returns Transformed package.json or undefined if no transformation needed
 	 */
 	transformPackageJson?: TransformPackageJsonHook;

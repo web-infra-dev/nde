@@ -32,11 +32,9 @@ export type TracedFile = {
 	pkgVersion?: string;
 };
 
-export type TransformPackageJsonHook = (
-	pkgName: string,
-	version: string,
-	pkgJSON: PackageJson,
-) => PackageJson | undefined;
+export type TransformPackageJsonHook = (options: {
+	pkgJSON: PackageJson;
+}) => PackageJson | undefined;
 
 function applyPublicCondition(pkg: PackageJson) {
 	if (pkg?.publishConfig?.exports) {
@@ -94,11 +92,7 @@ export const writePackage = async (options: WritePackageOptions) => {
 				pkgJSON = cachedPkgJSON;
 			}
 		} else {
-			const transformedPkgJSON = transformPackageJson(
-				pkg.name,
-				version,
-				pkgJSON,
-			);
+			const transformedPkgJSON = transformPackageJson({ pkgJSON });
 			if (transformedPkgJSON) {
 				pkgJSON = transformedPkgJSON;
 			}
