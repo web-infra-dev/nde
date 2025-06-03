@@ -28,6 +28,9 @@
     "change-status": "modern change-status",
     "gen-release-note": "modern gen-release-note",
     "release": "modern release",
+    "release:local": "./scripts/release.sh",
+    "release:dry": "modern release --dry-run",
+    "release:github": "node scripts/create-github-release.js",
     "prepublish": "modern build",
     "new": "modern new",
     "upgrade": "modern upgrade"
