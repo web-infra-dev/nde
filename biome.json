@@ -6,6 +6,11 @@
     "enabled": true
   },
   "files": {
-    "include": ["src/**/*.ts", "src/**/*.d.ts"]
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.d.ts",
+      "scripts/**/*.js",
+      "scripts/**/*.ts"
+    ]
   }
 }
