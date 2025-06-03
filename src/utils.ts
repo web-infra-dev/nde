@@ -32,6 +32,12 @@ export type TracedFile = {
 	pkgVersion?: string;
 };
 
+export type TransformPackageJsonHook = (
+	pkgName: string,
+	version: string,
+	pkgJSON: PackageJson,
+) => PackageJson | undefined;
+
 function applyPublicCondition(pkg: PackageJson) {
 	if (pkg?.publishConfig?.exports) {
 		pkg.exports = pkg?.publishConfig?.exports;
@@ -43,10 +49,19 @@ interface WritePackageOptions {
 	version: string;
 	projectDir: string;
 	_pkgPath?: string;
+	transformPackageJson?: TransformPackageJsonHook;
+	packageJsonCache?: Map<string, PackageJson>;
 }
 
 export const writePackage = async (options: WritePackageOptions) => {
-	const { pkg, version, projectDir, _pkgPath } = options;
+	const {
+		pkg,
+		version,
+		projectDir,
+		_pkgPath,
+		transformPackageJson,
+		packageJsonCache,
+	} = options;
 	const pkgPath = _pkgPath || pkg.name;
 	for (const src of pkg.versions[version].files) {
 		if (src.includes("node_modules")) {
@@ -66,8 +81,31 @@ export const writePackage = async (options: WritePackageOptions) => {
 		}
 	}
 
-	const { pkgJSON } = pkg.versions[version];
+	let { pkgJSON } = pkg.versions[version];
 	applyPublicCondition(pkgJSON);
+
+	// Apply package.json transformation hook with caching for performance
+	if (transformPackageJson) {
+		const cacheKey = `${pkg.name}@${version}`;
+
+		if (packageJsonCache?.has(cacheKey)) {
+			const cachedPkgJSON = packageJsonCache.get(cacheKey);
+			if (cachedPkgJSON) {
+				pkgJSON = cachedPkgJSON;
+			}
+		} else {
+			const transformedPkgJSON = transformPackageJson(
+				pkg.name,
+				version,
+				pkgJSON,
+			);
+			if (transformedPkgJSON) {
+				pkgJSON = transformedPkgJSON;
+			}
+			// Cache the result to avoid repeated hook calls for the same package@version
+			packageJsonCache?.set(cacheKey, pkgJSON);
+		}
+	}
 
 	const packageJsonPath = path.join(
 		projectDir,

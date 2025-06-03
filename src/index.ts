@@ -11,6 +11,7 @@ import {
 	type CacheOptions,
 	type TracedFile,
 	type TracedPackage,
+	type TransformPackageJsonHook,
 	traceFiles as defaultTraceFiles,
 	findEntryFiles,
 	findPackageParents,
@@ -24,6 +25,7 @@ import {
 import { debug } from "./utils";
 
 export type { NodeFileTraceOptions } from "@vercel/nft";
+export type { TransformPackageJsonHook } from "./utils";
 export { nodeFileTrace } from "@vercel/nft";
 
 export const nodeDepEmit = async ({
@@ -33,6 +35,7 @@ export const nodeDepEmit = async ({
 	traceFiles = defaultTraceFiles,
 	entryFilter,
 	modifyPackageJson,
+	transformPackageJson,
 	copyWholePackage,
 	cacheOptions = {
 		cacheDir: ".modern-js/deploy",
@@ -57,6 +60,14 @@ export const nodeDepEmit = async ({
 	traceFiles?: typeof defaultTraceFiles;
 	entryFilter?: (filePath: string) => boolean;
 	modifyPackageJson?: (pkgJson: PackageJson) => PackageJson;
+	/**
+	 * Hook to transform each package's package.json before writing it
+	 * @param pkgName - Package name
+	 * @param version - Package version
+	 * @param pkgJSON - Original package.json content
+	 * @returns Transformed package.json or undefined if no transformation needed
+	 */
+	transformPackageJson?: TransformPackageJsonHook;
 	copyWholePackage?: (pkgName: string, pkgJSON: PackageJson) => boolean;
 	cacheOptions?: CacheOptions;
 	traceOptions?: NodeFileTraceOptions;
@@ -79,6 +90,8 @@ export const nodeDepEmit = async ({
 	const currentProjectModules = path.join(appDir, "node_modules");
 	// Because vercel/nft may find inaccurately, we limit the range of query of dependencies
 	const dependencySearchRoot = path.resolve(appDir, "../../../../../../");
+
+	const packageJsonCache = new Map<string, PackageJson>();
 
 	const tracedFiles: Record<string, TracedFile> = Object.fromEntries(
 		(await Promise.all(
@@ -262,6 +275,8 @@ export const nodeDepEmit = async ({
 				pkg,
 				version,
 				projectDir: sourceDir,
+				transformPackageJson,
+				packageJsonCache,
 			});
 		}),
 	);
@@ -306,6 +321,8 @@ export const nodeDepEmit = async ({
 				version,
 				projectDir: sourceDir,
 				_pkgPath: pkgDestPath,
+				transformPackageJson,
+				packageJsonCache,
 			});
 			await linkPackage(pkgDestPath, `${pkgName}`, sourceDir);
 

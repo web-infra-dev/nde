@@ -47,6 +47,7 @@ exports[`handle dependencies > basic usage 1`] = `
   },
   "name": "project1-prod",
   "private": true,
+  "type": "commonjs",
   "version": "1.0.0",
 }
 `;
