@@ -62,7 +62,7 @@ fi
 
 # Publish to npm
 echo -e "${YELLOW}📤 Publishing to npm...${NC}"
-pnpm release
+pnpm publish
 
 # Push to GitHub
 echo -e "${YELLOW}🔗 Pushing to GitHub...${NC}"

@@ -1,37 +1,31 @@
 {
   "name": "ndepe",
   "version": "0.1.11",
-  "types": "./dist/cjs/index.d.ts",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/web-infra-dev/nde/tree/main"
-  },
   "keywords": [
     "deploy",
     "dependency",
     "build"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/web-infra-dev/nde/tree/main"
+  },
+  "license": "MIT",
+  "sideEffects": [],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "prepare": "modern build && husky install",
-    "dev": "modern dev",
-    "build": "modern build",
-    "build:watch": "modern build -w",
-    "test": "vitest --run",
-    "reset": "rimraf ./**/node_modules",
-    "lint": "modern lint",
-    "change": "modern change",
-    "bump": "modern bump",
-    "pre": "modern pre",
-    "gen-release-note": "modern gen-release-note",
-    "release": "modern release",
-    "release:local": "./scripts/release.sh",
+    "build": "rslib build",
+    "build:watch": "rslib build -w",
+    "bump": "changeset version",
+    "change": "changeset",
+    "prepare": "pnpm run build && husky install",
+    "prepublish": "pnpm run build",
     "release:github": "node scripts/create-github-release.js",
-    "prepublish": "modern build",
-    "new": "modern new",
-    "upgrade": "modern upgrade"
+    "release:local": "./scripts/release.sh",
+    "reset": "rimraf ./**/node_modules",
+    "test": "vitest --run"
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx}": [
@@ -49,7 +43,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.3",
-    "@modern-js/module-tools": "2.58.0",
+    "@changesets/cli": "^2.29.4",
+    "@rslib/core": "^0.9.1",
     "@types/debug": "^4.1.12",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "~16.11.7",
@@ -64,10 +59,8 @@
     "typescript": "~5.0.4",
     "vitest": "^2.0.5"
   },
-  "sideEffects": [],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  },
-  "packageManager": "pnpm@8.15.0+sha512.ea45517d5285d123eac02c3793505fa1fd6da90a2fc60d1e8d9e0c1e9292886ecfaff513f062b9d1cc8021bb8615033b1ac5bea3b2ee3fc165a6d7034bbe6b03"
+  }
 }
