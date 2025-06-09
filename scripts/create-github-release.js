@@ -76,27 +76,46 @@ function createGitHubRelease() {
 		// Check if gh CLI is installed
 		execSync("gh --version", { stdio: "pipe" });
 
-		// Create release using GitHub CLI
-		const command = [
-			"gh",
-			"release",
-			"create",
-			tagName,
-			"--title",
-			`Release ${tagName}`,
-			"--notes",
-			`"${releaseNotes}"`,
-			"--latest",
-		].join(" ");
+		// Check if release already exists
+		try {
+			execSync(`gh release view ${tagName}`, { stdio: "pipe" });
+			console.log(`⚠️ Release ${tagName} already exists. Skipping creation.`);
+			console.log(
+				`🔗 View at: https://github.com/${getRepoInfo()}/releases/tag/${tagName}`,
+			);
+			return;
+		} catch (error) {
+			// Release doesn't exist, continue with creation
+		}
 
 		console.log(`📝 Release notes:\n${releaseNotes}\n`);
 
-		execSync(command, { stdio: "inherit" });
+		// Write release notes to temporary file to avoid command line escaping issues
+		const tempFile = path.join(process.cwd(), ".release-notes-temp.md");
+		fs.writeFileSync(tempFile, releaseNotes, "utf8");
 
-		console.log(`✅ GitHub release ${tagName} created successfully!`);
-		console.log(
-			`🔗 View at: https://github.com/${getRepoInfo()}/releases/tag/${tagName}`,
-		);
+		try {
+			// Create release using GitHub CLI with notes from file
+			const command = `gh release create ${tagName} --title "Release ${tagName}" --notes-file "${tempFile}" --latest`;
+
+			console.log(`🔧 Executing: ${command}`);
+
+			execSync(command, {
+				stdio: "inherit",
+				shell: true,
+				env: { ...process.env },
+			});
+
+			console.log(`✅ GitHub release ${tagName} created successfully!`);
+			console.log(
+				`🔗 View at: https://github.com/${getRepoInfo()}/releases/tag/${tagName}`,
+			);
+		} finally {
+			// Clean up temporary file
+			if (fs.existsSync(tempFile)) {
+				fs.unlinkSync(tempFile);
+			}
+		}
 	} catch (error) {
 		if (error.message.includes("gh: command not found")) {
 			console.error(
@@ -104,6 +123,12 @@ function createGitHubRelease() {
 			);
 			console.error("   brew install gh");
 			console.error("   or visit: https://cli.github.com/");
+		} else if (error.message.includes("already exists")) {
+			console.log(`⚠️ Release ${tagName} already exists. Skipping creation.`);
+			console.log(
+				`🔗 View at: https://github.com/${getRepoInfo()}/releases/tag/${tagName}`,
+			);
+			return;
 		} else {
 			console.error("❌ Error creating GitHub release:", error.message);
 		}
@@ -120,7 +145,6 @@ function getRepoInfo() {
 	return match ? match[1] : "unknown/repo";
 }
 
-// Main execution
 if (require.main === module) {
 	createGitHubRelease();
 }
