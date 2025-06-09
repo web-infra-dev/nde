@@ -21,9 +21,10 @@
     "bump": "changeset version",
     "change": "changeset",
     "prepare": "pnpm run build && husky install",
-    "prepublish": "pnpm run build",
+    "prepublishOnly": "pnpm run build",
     "release:github": "node scripts/create-github-release.js",
-    "release:local": "./scripts/release.sh",
+    "release:local": "npx zx scripts/release.mjs",
+    "release:force": "pnpm publish --no-git-checks",
     "reset": "rimraf ./**/node_modules",
     "test": "vitest --run"
   },
@@ -57,7 +58,8 @@
     "rimraf": "~3.0.2",
     "ts-node": "^10.9.2",
     "typescript": "~5.0.4",
-    "vitest": "^2.0.5"
+    "vitest": "^2.0.5",
+    "zx": "^8.5.5"
   },
   "publishConfig": {
     "access": "public",
