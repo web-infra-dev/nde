@@ -1,5 +1,11 @@
 # ndepe
 
+## 0.1.12
+
+### Patch Changes
+
+- 661d749: chore: the product is built using rslib
+
 ## 0.1.11
 
 ### Patch Changes
