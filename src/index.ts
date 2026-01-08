@@ -133,20 +133,29 @@ export const nodeDepEmit = async ({
 					);
 					const match = filePath.match(MODERN_UTILS_PATH_REGEX);
 
-					const packageJsonPath: string | null = match
+					let packageJsonPath: string | null = match
 						? path.join(match[0], "package.json")
 						: await pkgUp({ cwd: path.dirname(filePath) });
 
-					if (
+					// Keep searching for a parent package.json with a "name" field
+					// Some packages use subdirectory package.json files as directory entry points with no "name" field
+					while (
 						packageJsonPath &&
 						isSubPath(dependencySearchRoot, packageJsonPath)
 					) {
 						const packageJson: PackageJson =
 							await fse.readJSON(packageJsonPath);
 
-						pkgPath = baseDir = path.dirname(packageJsonPath);
-						subpath = path.relative(baseDir, filePath);
-						pkgName = packageJson.name;
+						if (packageJson.name) {
+							pkgPath = baseDir = path.dirname(packageJsonPath);
+							subpath = path.relative(baseDir, filePath);
+							pkgName = packageJson.name;
+							break;
+						}
+
+						// No name field, search for parent package.json
+						const parentDir = path.dirname(path.dirname(packageJsonPath));
+						packageJsonPath = await pkgUp({ cwd: parentDir });
 					}
 				}
 
