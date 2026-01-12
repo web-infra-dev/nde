@@ -26,4 +26,29 @@ describe('handle dependencies', () => {
   })
 })
 
+describe('handle workspace packages with directory entry points', () => {
+  const project2Dir = path.join(__dirname, 'fixtures/project2');
+  const srcDir = path.join(project2Dir, 'src');
+  const outputNodeModulesDir = path.join(srcDir, 'node_modules');
+  const outputPkgPath = path.join(srcDir, 'package.json');
+
+  afterEach(async () => {
+    await fse.remove(outputNodeModulesDir);
+    await fse.remove(outputPkgPath);
+  })
+
+  it('should handle package.json without name field (directory entry points)', async () => {
+    // This test reproduces the bug where a package.json without a "name" field
+    // (used for directory entry points) causes a TypeError because path.join receives undefined
+    await expect(nodeDepEmit({
+      appDir: project2Dir,
+      sourceDir: srcDir,
+    })).resolves.not.toThrow();
+
+    // Verify the output package.json was created
+    const pkgJsonExists = await fse.pathExists(outputPkgPath);
+    expect(pkgJsonExists).toBe(true);
+  })
+})
+
 

@@ -1,0 +1,7 @@
+{
+  "name": "@test/workspace-pkg",
+  "version": "1.0.0",
+  "exports": {
+    "./hooks": "./hooks/index.js"
+  }
+}
