@@ -27,7 +27,7 @@
     "release:force": "pnpm publish --no-git-checks",
     "reset": "rimraf ./**/node_modules",
     "test": "pnpm run test:setup && vitest --run",
-    "test:setup": "cd tests/fixtures/project1 && [ -d node_modules ] || pnpm install --frozen-lockfile"
+    "test:setup": "cd tests/fixtures/project1 && [ -d node_modules ] || pnpm install"
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx}": [
@@ -62,7 +62,7 @@
     "vitest": "^2.0.5",
     "zx": "^8.5.5"
   },
-  "packageManager": "pnpm@^10.0.0",
+  "packageManager": "pnpm@10.0.0",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
