@@ -108,6 +108,15 @@ try {
     process.exit(1)
   }
 
+  // Check for npm token in environment variable
+  const npmToken = process.env.NPM_TOKEN
+
+  if (npmToken) {
+    console.log(colors.green('🔑 Using NPM_TOKEN from environment variable'))
+    // pnpm/npm will use NPM_TOKEN automatically if set
+    process.env.NPM_CONFIG_TOKEN = npmToken
+  }
+
   console.log(colors.yellow('📤 Publishing to npm...'))
   await $`pnpm publish`
 
