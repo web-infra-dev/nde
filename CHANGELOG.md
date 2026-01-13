@@ -1,5 +1,12 @@
 # ndepe
 
+## 0.1.13
+
+### Patch Changes
+
+- 6728c91: chore: optimize ci workflow
+- f7d8a89: fix: handle package.json without name field (directory entry points)
+
 ## 0.1.12
 
 ### Patch Changes
