@@ -108,11 +108,24 @@ try {
     process.exit(1)
   }
 
+  // Check for npm token in environment variable
+  const npmToken = process.env.NPM_TOKEN
+
+  if (npmToken) {
+    console.log(colors.green('🔑 Using NPM_TOKEN from environment variable'))
+    // Configure npm registry auth token via user-level config
+    // Use automation token (no 2FA required) from: https://www.npmjs.com/settings/<your-username>/tokens
+    // This doesn't modify project .npmrc file, only sets user-level config
+    await $`pnpm config set //registry.npmjs.org/:_authToken ${npmToken}`
+    console.log(colors.green('✅ Configured npm authentication'))
+  }
+
   console.log(colors.yellow('📤 Publishing to npm...'))
   await $`pnpm publish`
 
   console.log(colors.yellow('🔗 Pushing to GitHub...'))
-  await $`git push origin main --follow-tags`
+  await $`git push origin main`
+  await $`git push origin ${tagName}`
 
   console.log(colors.yellow('📋 Creating GitHub Release...'))
   await $`node scripts/create-github-release.js`
