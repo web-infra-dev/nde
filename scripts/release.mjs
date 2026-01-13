@@ -113,8 +113,11 @@ try {
 
   if (npmToken) {
     console.log(colors.green('🔑 Using NPM_TOKEN from environment variable'))
-    // pnpm/npm will use NPM_TOKEN automatically if set
-    process.env.NPM_CONFIG_TOKEN = npmToken
+    // Configure npm registry auth token via user-level config
+    // Use automation token (no 2FA required) from: https://www.npmjs.com/settings/<your-username>/tokens
+    // This doesn't modify project .npmrc file, only sets user-level config
+    await $`pnpm config set //registry.npmjs.org/:_authToken ${npmToken}`
+    console.log(colors.green('✅ Configured npm authentication'))
   }
 
   console.log(colors.yellow('📤 Publishing to npm...'))
