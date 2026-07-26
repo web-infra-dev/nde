@@ -15,19 +15,22 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "build": "rslib build",
     "build:watch": "rslib build -w",
-    "bump": "changeset version",
     "change": "changeset",
     "prepare": "pnpm run build && husky install",
-    "prepublishOnly": "pnpm run build",
-    "release:github": "node scripts/create-github-release.js",
-    "release:local": "npx zx scripts/release.mjs",
-    "release:force": "pnpm publish --no-git-checks",
+    "prepublishOnly": "node -e \"console.error('Direct publishing is disabled. Use pnpm release.'); process.exit(1)\"",
+    "release:prepare": "node scripts/release-prepare.mjs",
+    "release": "node scripts/release.mjs",
     "reset": "rimraf ./**/node_modules",
-    "test": "pnpm run test:setup && vitest --run",
-    "test:setup": "cd tests/fixtures/project1 && [ -d node_modules ] || pnpm install --frozen-lockfile"
+    "test": "pnpm run test:setup && vitest --run && node --test scripts/*.node-test.mjs",
+    "test:setup": "cd tests/fixtures/project1 && [ -d node_modules ] || pnpm install --frozen-lockfile --ignore-scripts"
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx}": [
@@ -59,8 +62,7 @@
     "rimraf": "~3.0.2",
     "ts-node": "^10.9.2",
     "typescript": "~5.0.4",
-    "vitest": "^2.0.5",
-    "zx": "^8.5.5"
+    "vitest": "^2.0.5"
   },
   "packageManager": "pnpm@10.0.0",
   "publishConfig": {

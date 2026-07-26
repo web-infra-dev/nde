@@ -10,6 +10,7 @@
 			"src/**/*.ts",
 			"src/**/*.d.ts",
 			"scripts/**/*.js",
+			"scripts/**/*.mjs",
 			"scripts/**/*.ts"
 		]
 	}
