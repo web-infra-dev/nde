@@ -91,12 +91,15 @@ export const nodeDepEmit = async ({
 	 */
 	traceOptions?: NodeFileTraceOptions;
 }) => {
-	const base = traceRoot === undefined ? "/" : path.resolve(appDir, traceRoot);
+	const traceBoundary =
+		traceRoot === undefined ? "/" : path.resolve(appDir, traceRoot);
+	const base =
+		traceRoot === undefined ? traceBoundary : await fse.realpath(traceBoundary);
 	if (traceRoot !== undefined) {
 		const resolvedSourceDir = path.resolve(sourceDir);
-		if (!isPathInsideOrEqual(base, resolvedSourceDir)) {
+		if (!isPathInsideOrEqual(traceBoundary, resolvedSourceDir)) {
 			throw new Error(
-				`The trace root "${base}" must contain sourceDir "${resolvedSourceDir}".`,
+				`The trace root "${traceBoundary}" must contain sourceDir "${resolvedSourceDir}".`,
 			);
 		}
 	}
@@ -106,20 +109,31 @@ export const nodeDepEmit = async ({
 	if (traceRoot !== undefined) {
 		const outsideEntryFiles = allEntryFiles
 			.map((entryFile) => path.resolve(entryFile))
-			.filter((entryFile) => !isPathInsideOrEqual(base, entryFile));
+			.filter((entryFile) => !isPathInsideOrEqual(traceBoundary, entryFile));
 		if (outsideEntryFiles.length > 0) {
 			throw new Error(
-				`The trace root "${base}" must contain every entry file. Outside entries:\n${outsideEntryFiles
+				`The trace root "${traceBoundary}" must contain every entry file. Outside entries:\n${outsideEntryFiles
 					.map((entryFile) => `- "${entryFile}"`)
 					.join("\n")}`,
 			);
 		}
 	}
 
+	let tracingAppDir = appDir;
+	let tracingSourceDir = sourceDir;
+	let tracingEntryFiles = allEntryFiles;
+	if (traceRoot !== undefined) {
+		[tracingAppDir, tracingSourceDir, tracingEntryFiles] = await Promise.all([
+			fse.realpath(appDir),
+			fse.realpath(sourceDir),
+			Promise.all(allEntryFiles.map((entryFile) => fse.realpath(entryFile))),
+		]);
+	}
+
 	debug("trace files start");
 	const fileTrace = await traceFiles({
-		entryFiles: allEntryFiles,
-		sourceDir,
+		entryFiles: tracingEntryFiles,
+		sourceDir: tracingSourceDir,
 		cacheOptions: {
 			...cacheOptions,
 			cacheDir: path.resolve(appDir, cacheOptions.cacheDir),
@@ -128,9 +142,12 @@ export const nodeDepEmit = async ({
 		traceOptions,
 	});
 	debug("trace files end");
-	const currentProjectModules = path.join(appDir, "node_modules");
+	const currentProjectModules = path.join(tracingAppDir, "node_modules");
 	// Because vercel/nft may find inaccurately, we limit the range of query of dependencies
-	const dependencySearchRoot = path.resolve(appDir, "../../../../../../");
+	const dependencySearchRoot = path.resolve(
+		tracingAppDir,
+		"../../../../../../",
+	);
 
 	const packageJsonCache = new Map<string, PackageJson>();
 
@@ -143,8 +160,8 @@ export const nodeDepEmit = async ({
 				const filePath = await resolveTracedPath(base, _path);
 
 				if (
-					isSubPath(sourceDir, filePath) ||
-					(isSubPath(appDir, filePath) &&
+					isSubPath(tracingSourceDir, filePath) ||
+					(isSubPath(tracingAppDir, filePath) &&
 						!isSubPath(currentProjectModules, filePath))
 				) {
 					return;
@@ -213,7 +230,7 @@ export const nodeDepEmit = async ({
 					parents,
 					isDirectDep: parents.some((parent) => {
 						return (
-							isSubPath(appDir, parent) &&
+							isSubPath(tracingAppDir, parent) &&
 							!isSubPath(currentProjectModules, parent)
 						);
 					}),

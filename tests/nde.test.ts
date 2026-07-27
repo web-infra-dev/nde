@@ -101,13 +101,17 @@ describe('trace root', () => {
     });
   });
 
-  it('uses the same relative trace root for tracing and dependency copying', async () => {
-    await withTempDir(async traceRoot => {
-      const appDir = path.join(traceRoot, 'apps/app');
+  it('uses the same canonical trace root for tracing and dependency copying', async () => {
+    await withTempDir(async tempDir => {
+      const traceRoot = path.join(tempDir, 'real-root');
+      const linkedTraceRoot = path.join(tempDir, 'linked-root');
+      const appDir = path.join(linkedTraceRoot, 'apps/app');
       const sourceDir = path.join(appDir, 'dist');
       const dependencyDir = path.join(traceRoot, 'node_modules/test-dependency');
       let tracedBase: string | undefined;
 
+      await fse.ensureDir(traceRoot);
+      await fse.symlink(traceRoot, linkedTraceRoot, 'dir');
       await fse.outputJSON(path.join(dependencyDir, 'package.json'), {
         name: 'test-dependency',
         version: '1.0.0',
