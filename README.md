@@ -21,3 +21,23 @@ nodeDepEmit({
 
 ```
 
+### Trace root
+
+Use `traceRoot` to set the `@vercel/nft` dependency tracing boundary:
+
+```js
+nodeDepEmit({
+  appDir: appDirectory,
+  sourceDir: sourceDirectory,
+  traceRoot: '../..',
+})
+```
+
+Relative paths are resolved from `appDir`; absolute paths are used directly.
+An empty string resolves to `appDir`, and omitting `traceRoot` keeps the
+existing `/` default.
+
+The root must contain `sourceDir`, every entry file, and all runtime workspace
+packages and dependencies. It is an analysis boundary, not a security sandbox.
+Ndepe manages `traceOptions.base`, `processCwd`, and `cache`; other nft options
+and filesystem hooks are forwarded.

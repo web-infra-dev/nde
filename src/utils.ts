@@ -311,10 +311,10 @@ export const traceFiles = async ({
 	};
 
 	const res = await nodeFileTrace(entryFiles, {
+		...traceOptions,
 		base,
 		processCwd: sourceDir,
 		cache,
-		...traceOptions,
 	});
 
 	if (analysisCache || fileCache || symlinkCache) {
