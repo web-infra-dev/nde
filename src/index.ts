@@ -28,6 +28,16 @@ export type { NodeFileTraceOptions } from "@vercel/nft";
 export type { TransformPackageJsonHook } from "./utils";
 export { nodeFileTrace } from "@vercel/nft";
 
+const isPathInsideOrEqual = (parentPath: string, childPath: string) => {
+	const relativePath = path.relative(parentPath, childPath);
+	return (
+		relativePath === "" ||
+		(!path.isAbsolute(relativePath) &&
+			relativePath !== ".." &&
+			!relativePath.startsWith(`..${path.sep}`))
+	);
+};
+
 export const nodeDepEmit = async ({
 	appDir,
 	sourceDir,
@@ -82,8 +92,29 @@ export const nodeDepEmit = async ({
 	traceOptions?: NodeFileTraceOptions;
 }) => {
 	const base = traceRoot === undefined ? "/" : path.resolve(appDir, traceRoot);
+	if (
+		traceRoot !== undefined &&
+		!isPathInsideOrEqual(base, path.resolve(sourceDir))
+	) {
+		throw new Error(
+			`The trace root "${base}" must contain sourceDir "${path.resolve(sourceDir)}".`,
+		);
+	}
+
 	const entryFiles = await findEntryFiles(sourceDir, entryFilter);
 	const allEntryFiles = entryFiles.concat(includeEntries || []);
+	if (traceRoot !== undefined) {
+		const outsideEntryFiles = allEntryFiles
+			.map((entryFile) => path.resolve(entryFile))
+			.filter((entryFile) => !isPathInsideOrEqual(base, entryFile));
+		if (outsideEntryFiles.length > 0) {
+			throw new Error(
+				`The trace root "${base}" must contain every entry file. Outside entries:\n${outsideEntryFiles
+					.map((entryFile) => `- "${entryFile}"`)
+					.join("\n")}`,
+			);
+		}
+	}
 
 	debug("trace files start");
 	const fileTrace = await traceFiles({
