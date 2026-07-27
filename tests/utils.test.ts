@@ -8,7 +8,16 @@ import {
   isFile,
   findEntryFiles,
   isSubPath,
+  traceFiles,
 } from '../src/utils';
+
+const { nodeFileTraceMock } = vi.hoisted(() => ({
+  nodeFileTraceMock: vi.fn(),
+}));
+
+vi.mock('@vercel/nft', () => ({
+  nodeFileTrace: nodeFileTraceMock,
+}));
 
 vi.mock('fs-extra', () => {
   const actual = vi.importActual('fs-extra');
@@ -129,6 +138,52 @@ describe('utils', () => {
     it('should verify if a path is a subpath of another', () => {
       expect(isSubPath('/parent', '/parent/child')).toBe(true);
       expect(isSubPath('/parent', '/parent2/sibling')).toBe(false);
+    });
+  });
+
+  describe('traceFiles', () => {
+    it('keeps ownership of base, processCwd, and cache while forwarding other trace options', async () => {
+      const readFile = vi.fn();
+      nodeFileTraceMock.mockResolvedValue({
+        fileList: new Set(),
+        esmFileList: new Set(),
+        reasons: new Map(),
+        warnings: new Set(),
+      });
+
+      await traceFiles({
+        entryFiles: ['/app/dist/index.js'],
+        sourceDir: '/app/dist',
+        base: '/trace-root',
+        cacheOptions: {
+          cacheDir: '/cache',
+          analysisCache: false,
+          fileCache: false,
+          symlinkCache: false,
+        },
+        traceOptions: {
+          base: '/overridden-root',
+          processCwd: '/overridden-cwd',
+          cache: { custom: true },
+          analysis: false,
+          readFile,
+        },
+      });
+
+      expect(nodeFileTraceMock).toHaveBeenCalledWith(
+        ['/app/dist/index.js'],
+        expect.objectContaining({
+          base: '/trace-root',
+          processCwd: '/app/dist',
+          cache: {
+            analysisCache: undefined,
+            fileCache: undefined,
+            symlinkCache: undefined,
+          },
+          analysis: false,
+          readFile,
+        }),
+      );
     });
   });
 });
