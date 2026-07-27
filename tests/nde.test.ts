@@ -146,12 +146,10 @@ describe('trace root', () => {
     });
   });
 
-  it('rejects source directories and include entries outside the trace root', async () => {
+  it('rejects source directories outside the trace root', async () => {
     await withTempDir(async tempDir => {
       const appDir = path.join(tempDir, 'app');
-      const sourceDir = path.join(appDir, 'dist');
       const missingSourceDir = path.join(tempDir, 'missing-source');
-      const outsideEntry = path.join(tempDir, 'outside.js');
       const traceFiles = async () => {
         throw new Error('traceFiles should not be called');
       };
@@ -166,24 +164,6 @@ describe('trace root', () => {
         }),
       ).rejects.toThrow(
         `The trace root "${appDir}" must contain sourceDir "${missingSourceDir}".`,
-      );
-
-      await fse.outputFile(
-        path.join(sourceDir, 'index.js'),
-        'module.exports = 1;',
-      );
-      await fse.outputFile(outsideEntry, 'module.exports = 2;');
-
-      await expect(
-        nodeDepEmit({
-          appDir,
-          sourceDir,
-          traceRoot: '',
-          includeEntries: [outsideEntry],
-          traceFiles,
-        }),
-      ).rejects.toThrow(
-        `The trace root "${appDir}" must contain every entry file. Outside entries:\n- "${outsideEntry}"`,
       );
     });
   });

@@ -106,28 +106,20 @@ export const nodeDepEmit = async ({
 
 	const entryFiles = await findEntryFiles(sourceDir, entryFilter);
 	const allEntryFiles = entryFiles.concat(includeEntries || []);
-	if (traceRoot !== undefined) {
-		const outsideEntryFiles = allEntryFiles
-			.map((entryFile) => path.resolve(entryFile))
-			.filter((entryFile) => !isPathInsideOrEqual(traceBoundary, entryFile));
-		if (outsideEntryFiles.length > 0) {
-			throw new Error(
-				`The trace root "${traceBoundary}" must contain every entry file. Outside entries:\n${outsideEntryFiles
-					.map((entryFile) => `- "${entryFile}"`)
-					.join("\n")}`,
-			);
-		}
-	}
 
 	let tracingAppDir = appDir;
 	let tracingSourceDir = sourceDir;
 	let tracingEntryFiles = allEntryFiles;
 	if (traceRoot !== undefined) {
-		[tracingAppDir, tracingSourceDir, tracingEntryFiles] = await Promise.all([
-			fse.realpath(appDir),
-			fse.realpath(sourceDir),
-			Promise.all(allEntryFiles.map((entryFile) => fse.realpath(entryFile))),
-		]);
+		const resolvedAppDir = path.resolve(appDir);
+		tracingAppDir = await fse.realpath(resolvedAppDir);
+		const resolveTracingPath = (filePath: string) =>
+			path.resolve(
+				tracingAppDir,
+				path.relative(resolvedAppDir, path.resolve(filePath)),
+			);
+		tracingSourceDir = resolveTracingPath(sourceDir);
+		tracingEntryFiles = allEntryFiles.map(resolveTracingPath);
 	}
 
 	debug("trace files start");
