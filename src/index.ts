@@ -28,16 +28,6 @@ export type { NodeFileTraceOptions } from "@vercel/nft";
 export type { TransformPackageJsonHook } from "./utils";
 export { nodeFileTrace } from "@vercel/nft";
 
-const isPathInsideOrEqual = (parentPath: string, childPath: string) => {
-	const relativePath = path.relative(parentPath, childPath);
-	return (
-		relativePath === "" ||
-		(!path.isAbsolute(relativePath) &&
-			relativePath !== ".." &&
-			!relativePath.startsWith(`..${path.sep}`))
-	);
-};
-
 export const nodeDepEmit = async ({
 	appDir,
 	sourceDir,
@@ -91,41 +81,14 @@ export const nodeDepEmit = async ({
 	 */
 	traceOptions?: NodeFileTraceOptions;
 }) => {
-	const traceBoundary =
-		traceRoot === undefined ? "/" : path.resolve(appDir, traceRoot);
-	const base =
-		traceRoot === undefined ? traceBoundary : await fse.realpath(traceBoundary);
-	if (traceRoot !== undefined) {
-		const resolvedSourceDir = path.resolve(sourceDir);
-		if (!isPathInsideOrEqual(traceBoundary, resolvedSourceDir)) {
-			throw new Error(
-				`The trace root "${traceBoundary}" must contain sourceDir "${resolvedSourceDir}".`,
-			);
-		}
-	}
-
+	const base = traceRoot === undefined ? "/" : path.resolve(appDir, traceRoot);
 	const entryFiles = await findEntryFiles(sourceDir, entryFilter);
 	const allEntryFiles = entryFiles.concat(includeEntries || []);
 
-	let tracingAppDir = appDir;
-	let tracingSourceDir = sourceDir;
-	let tracingEntryFiles = allEntryFiles;
-	if (traceRoot !== undefined) {
-		const resolvedAppDir = path.resolve(appDir);
-		tracingAppDir = await fse.realpath(resolvedAppDir);
-		const resolveTracingPath = (filePath: string) =>
-			path.resolve(
-				tracingAppDir,
-				path.relative(resolvedAppDir, path.resolve(filePath)),
-			);
-		tracingSourceDir = resolveTracingPath(sourceDir);
-		tracingEntryFiles = allEntryFiles.map(resolveTracingPath);
-	}
-
 	debug("trace files start");
 	const fileTrace = await traceFiles({
-		entryFiles: tracingEntryFiles,
-		sourceDir: tracingSourceDir,
+		entryFiles: allEntryFiles,
+		sourceDir,
 		cacheOptions: {
 			...cacheOptions,
 			cacheDir: path.resolve(appDir, cacheOptions.cacheDir),
@@ -134,12 +97,9 @@ export const nodeDepEmit = async ({
 		traceOptions,
 	});
 	debug("trace files end");
-	const currentProjectModules = path.join(tracingAppDir, "node_modules");
+	const currentProjectModules = path.join(appDir, "node_modules");
 	// Because vercel/nft may find inaccurately, we limit the range of query of dependencies
-	const dependencySearchRoot = path.resolve(
-		tracingAppDir,
-		"../../../../../../",
-	);
+	const dependencySearchRoot = path.resolve(appDir, "../../../../../../");
 
 	const packageJsonCache = new Map<string, PackageJson>();
 
@@ -152,8 +112,8 @@ export const nodeDepEmit = async ({
 				const filePath = await resolveTracedPath(base, _path);
 
 				if (
-					isSubPath(tracingSourceDir, filePath) ||
-					(isSubPath(tracingAppDir, filePath) &&
+					isSubPath(sourceDir, filePath) ||
+					(isSubPath(appDir, filePath) &&
 						!isSubPath(currentProjectModules, filePath))
 				) {
 					return;
@@ -222,7 +182,7 @@ export const nodeDepEmit = async ({
 					parents,
 					isDirectDep: parents.some((parent) => {
 						return (
-							isSubPath(tracingAppDir, parent) &&
+							isSubPath(appDir, parent) &&
 							!isSubPath(currentProjectModules, parent)
 						);
 					}),

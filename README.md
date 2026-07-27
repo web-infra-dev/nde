@@ -33,11 +33,11 @@ nodeDepEmit({
 })
 ```
 
-Relative paths are resolved from `appDir`; absolute paths are used as the root
-candidate. The resulting root is canonicalized before tracing. An empty string
-resolves to `appDir`, and omitting `traceRoot` keeps the existing `/` default.
+Relative paths are resolved from `appDir`; absolute paths are used directly.
+An empty string resolves to `appDir`, and omitting `traceRoot` keeps the
+existing `/` default.
 
-The root must contain `sourceDir`, every entry file, and all runtime workspace
-packages and dependencies. It is an analysis boundary, not a security sandbox.
-Ndepe manages `traceOptions.base`, `processCwd`, and `cache`; other nft options
-and filesystem hooks are forwarded.
+The root must contain the application output and all runtime workspace packages
+and dependencies. It is an analysis boundary, not a security sandbox. Ndepe
+manages `traceOptions.base`, `processCwd`, and `cache`; other nft options and
+filesystem hooks are forwarded.

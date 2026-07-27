@@ -101,17 +101,13 @@ describe('trace root', () => {
     });
   });
 
-  it('uses the same canonical trace root for tracing and dependency copying', async () => {
-    await withTempDir(async tempDir => {
-      const traceRoot = path.join(tempDir, 'real-root');
-      const linkedTraceRoot = path.join(tempDir, 'linked-root');
-      const appDir = path.join(linkedTraceRoot, 'apps/app');
+  it('uses the same relative trace root for tracing and dependency copying', async () => {
+    await withTempDir(async traceRoot => {
+      const appDir = path.join(traceRoot, 'apps/app');
       const sourceDir = path.join(appDir, 'dist');
       const dependencyDir = path.join(traceRoot, 'node_modules/test-dependency');
       let tracedBase: string | undefined;
 
-      await fse.ensureDir(traceRoot);
-      await fse.symlink(traceRoot, linkedTraceRoot, 'dir');
       await fse.outputJSON(path.join(dependencyDir, 'package.json'), {
         name: 'test-dependency',
         version: '1.0.0',
@@ -143,28 +139,6 @@ describe('trace root', () => {
           'utf8',
         ),
       ).resolves.toBe('module.exports = "test";');
-    });
-  });
-
-  it('rejects source directories outside the trace root', async () => {
-    await withTempDir(async tempDir => {
-      const appDir = path.join(tempDir, 'app');
-      const missingSourceDir = path.join(tempDir, 'missing-source');
-      const traceFiles = async () => {
-        throw new Error('traceFiles should not be called');
-      };
-
-      await fse.ensureDir(appDir);
-      await expect(
-        nodeDepEmit({
-          appDir,
-          sourceDir: missingSourceDir,
-          traceRoot: '',
-          traceFiles,
-        }),
-      ).rejects.toThrow(
-        `The trace root "${appDir}" must contain sourceDir "${missingSourceDir}".`,
-      );
     });
   });
 
