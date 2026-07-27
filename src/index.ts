@@ -38,6 +38,22 @@ const isPathInsideOrEqual = (parentPath: string, childPath: string) => {
 	);
 };
 
+const resolveTracingPath = async (
+	filePath: string,
+	traceBoundary: string,
+	base: string,
+) => {
+	const resolvedPath = path.resolve(filePath);
+	return fse.realpath(resolvedPath).catch((error) => {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+			throw error;
+		}
+		return isPathInsideOrEqual(traceBoundary, resolvedPath)
+			? path.resolve(base, path.relative(traceBoundary, resolvedPath))
+			: resolvedPath;
+	});
+};
+
 export const nodeDepEmit = async ({
 	appDir,
 	sourceDir,
@@ -86,30 +102,48 @@ export const nodeDepEmit = async ({
 	 */
 	traceRoot?: string;
 	/**
-	 * Options forwarded to nodeFileTrace. base, processCwd, and cache are
-	 * managed by ndepe and cannot be overridden here.
+	 * Options forwarded to nodeFileTrace. base is managed by ndepe and cannot
+	 * be overridden here.
 	 */
-	traceOptions?: NodeFileTraceOptions;
+	traceOptions?: Omit<NodeFileTraceOptions, "base">;
 }) => {
-	const base = traceRoot === undefined ? "/" : path.resolve(appDir, traceRoot);
-	if (
-		traceRoot !== undefined &&
-		!isPathInsideOrEqual(base, path.resolve(sourceDir))
-	) {
-		throw new Error(
-			`The trace root "${base}" must contain sourceDir "${path.resolve(sourceDir)}".`,
+	const traceBoundary =
+		traceRoot === undefined ? "/" : path.resolve(appDir, traceRoot);
+
+	let base = traceBoundary;
+	let tracingAppDir = appDir;
+	let tracingSourceDir = sourceDir;
+	if (traceRoot !== undefined) {
+		base = await fse.realpath(traceBoundary);
+		[tracingAppDir, tracingSourceDir] = await Promise.all(
+			[appDir, sourceDir].map((filePath) =>
+				resolveTracingPath(filePath, traceBoundary, base),
+			),
 		);
+
+		if (!isPathInsideOrEqual(base, tracingSourceDir)) {
+			throw new Error(
+				`The trace root "${traceBoundary}" must contain sourceDir "${path.resolve(sourceDir)}".`,
+			);
+		}
 	}
 
 	const entryFiles = await findEntryFiles(sourceDir, entryFilter);
 	const allEntryFiles = entryFiles.concat(includeEntries || []);
+	let tracingEntryFiles = allEntryFiles;
 	if (traceRoot !== undefined) {
-		const outsideEntryFiles = allEntryFiles
-			.map((entryFile) => path.resolve(entryFile))
-			.filter((entryFile) => !isPathInsideOrEqual(base, entryFile));
+		tracingEntryFiles = await Promise.all(
+			allEntryFiles.map((entryFile) =>
+				resolveTracingPath(entryFile, traceBoundary, base),
+			),
+		);
+
+		const outsideEntryFiles = tracingEntryFiles.filter(
+			(entryFile) => !isPathInsideOrEqual(base, entryFile),
+		);
 		if (outsideEntryFiles.length > 0) {
 			throw new Error(
-				`The trace root "${base}" must contain every entry file. Outside entries:\n${outsideEntryFiles
+				`The trace root "${traceBoundary}" must contain every entry file. Outside entries:\n${outsideEntryFiles
 					.map((entryFile) => `- "${entryFile}"`)
 					.join("\n")}`,
 			);
@@ -118,8 +152,8 @@ export const nodeDepEmit = async ({
 
 	debug("trace files start");
 	const fileTrace = await traceFiles({
-		entryFiles: allEntryFiles,
-		sourceDir,
+		entryFiles: tracingEntryFiles,
+		sourceDir: tracingSourceDir,
 		cacheOptions: {
 			...cacheOptions,
 			cacheDir: path.resolve(appDir, cacheOptions.cacheDir),
@@ -128,9 +162,12 @@ export const nodeDepEmit = async ({
 		traceOptions,
 	});
 	debug("trace files end");
-	const currentProjectModules = path.join(appDir, "node_modules");
+	const currentProjectModules = path.join(tracingAppDir, "node_modules");
 	// Because vercel/nft may find inaccurately, we limit the range of query of dependencies
-	const dependencySearchRoot = path.resolve(appDir, "../../../../../../");
+	const dependencySearchRoot = path.resolve(
+		tracingAppDir,
+		"../../../../../../",
+	);
 
 	const packageJsonCache = new Map<string, PackageJson>();
 
@@ -143,8 +180,8 @@ export const nodeDepEmit = async ({
 				const filePath = await resolveTracedPath(base, _path);
 
 				if (
-					isSubPath(sourceDir, filePath) ||
-					(isSubPath(appDir, filePath) &&
+					isSubPath(tracingSourceDir, filePath) ||
+					(isSubPath(tracingAppDir, filePath) &&
 						!isSubPath(currentProjectModules, filePath))
 				) {
 					return;
@@ -213,7 +250,7 @@ export const nodeDepEmit = async ({
 					parents,
 					isDirectDep: parents.some((parent) => {
 						return (
-							isSubPath(appDir, parent) &&
+							isSubPath(tracingAppDir, parent) &&
 							!isSubPath(currentProjectModules, parent)
 						);
 					}),

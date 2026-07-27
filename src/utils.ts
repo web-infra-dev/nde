@@ -297,7 +297,7 @@ export const traceFiles = async ({
 	sourceDir: string;
 	base?: string;
 	cacheOptions: CacheOptions;
-	traceOptions?: NodeFileTraceOptions;
+	traceOptions?: Omit<NodeFileTraceOptions, "base">;
 }) => {
 	const { cacheDir, fileCache, analysisCache, symlinkCache } = cacheOptions;
 	const analysisCacheFile = path.join(cacheDir, "analysis-cache.json");
@@ -311,10 +311,10 @@ export const traceFiles = async ({
 	};
 
 	const res = await nodeFileTrace(entryFiles, {
-		...traceOptions,
-		base,
 		processCwd: sourceDir,
 		cache,
+		...traceOptions,
+		base,
 	});
 
 	if (analysisCache || fileCache || symlinkCache) {
